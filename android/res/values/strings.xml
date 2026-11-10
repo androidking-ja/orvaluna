@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Orvaluna</string>
+    <string name="saved">PDF guardado en Descargas</string>
+    <string name="open_with">Abrir o compartir tu estudio</string>
+    <string name="error">No se pudo guardar el PDF</string>
+    <string name="exit">Pulsa de nuevo para salir</string>
+</resources>

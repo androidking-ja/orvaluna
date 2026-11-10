@@ -1,0 +1,144 @@
+# Orvaluna — compilación iOS en la nube (macOS de GitHub)
+#
+# 1) Siempre: compila para el simulador (verifica que el código compile, sin firmar).
+# 2) Si están configurados los secretos de App Store Connect: archiva, firma
+#    automáticamente (firma en la nube de Apple), genera el .ipa y lo sube a
+#    App Store Connect / TestFlight.
+#
+# Secretos (Settings → Secrets and variables → Actions → Secrets):
+#   APPLE_TEAM_ID          Team ID de 10 caracteres (developer.apple.com → Membership)
+#   APPSTORE_KEY_ID        Key ID de la clave de API de App Store Connect (rol Admin)
+#   APPSTORE_ISSUER_ID     Issuer ID que aparece encima de la lista de claves
+#   APPSTORE_KEY_P8        Contenido completo del archivo AuthKey_XXXX.p8
+# Variable opcional (Settings → Secrets and variables → Actions → Variables):
+#   IOS_BUNDLE_ID          Identificador del paquete (por defecto com.orvaluna.app)
+
+name: iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Subir el build a App Store Connect / TestFlight"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths: ["www/**", "ios/**", ".github/workflows/ios.yml"]
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'com.orvaluna.app' }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.APPSTORE_KEY_P8 }}
+      BUILD_NUMBER: ${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seleccionar Xcode estable más reciente
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Generar proyecto Xcode (XcodeGen)
+        working-directory: ios
+        run: |
+          brew install xcodegen
+          xcodegen generate
+          xcodebuild -version
+
+      - name: Compilar para simulador (verificación)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project Orvaluna.xcodeproj -scheme Orvaluna \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim \
+            CODE_SIGNING_ALLOWED=NO ORV_BUNDLE_ID="$BUNDLE_ID" build | tail -n 40
+
+      - name: ¿Hay credenciales de App Store Connect?
+        id: creds
+        run: |
+          if [ -n "$TEAM_ID" ] && [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Faltan secretos de App Store Connect: solo se compiló para el simulador."
+          fi
+
+      - name: Preparar clave de API y llavero
+        if: steps.creds.outputs.ok == 'true'
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          KEY=~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
+          security create-keychain -p ci build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ci build.keychain
+          security set-keychain-settings -lut 21600 build.keychain
+          security list-keychains -d user -s build.keychain login.keychain
+
+      - name: Archivar y firmar (Release)
+        if: steps.creds.outputs.ok == 'true'
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project Orvaluna.xcodeproj -scheme Orvaluna \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/Orvaluna.xcarchive archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            ORV_BUNDLE_ID="$BUNDLE_ID" ORV_TEAM_ID="$TEAM_ID" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" | tail -n 60
+
+      - name: Exportar .ipa para App Store
+        if: steps.creds.outputs.ok == 'true'
+        working-directory: ios
+        run: |
+          set -o pipefail
+          cat > build/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>export</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath build/Orvaluna.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist \
+            -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -n 40
+          ls -la build/export
+
+      - name: Guardar el .ipa como artefacto
+        if: steps.creds.outputs.ok == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Orvaluna-ios-${{ github.run_number }}
+          path: ios/build/export/*.ipa
+
+      - name: Subir a App Store Connect / TestFlight
+        if: steps.creds.outputs.ok == 'true' && (github.event_name == 'push' || inputs.upload)
+        run: |
+          IPA=$(ls ios/build/export/*.ipa | head -n 1)
+          xcrun altool --upload-app --type ios --file "$IPA" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          echo "::notice::Build $BUILD_NUMBER subido. Aparecerá en App Store Connect → TestFlight en unos minutos."

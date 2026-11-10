@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140A08">
+<title>Orvaluna</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+<audio id="bgm" src="audio/orvaluna_ambient.mp3" loop preload="auto"></audio>
+
+<!-- Encabezado -->
+<header id="hdr" class="hidden">
+  <div class="hdr-row">
+    <div class="hdr-text">
+      <div class="kicker" style="margin-top:12px">✨ <span id="hdrBrand">Astral &amp; Numerología</span></div>
+    </div>
+    <div class="hdr-actions">
+      <button class="round-btn" id="btnMusic" aria-label="music">♫</button>
+      <button class="round-btn gear" id="btnSettings" aria-label="settings">⚙</button>
+    </div>
+  </div>
+  <div class="name-row"><h1 id="hdrName">—</h1><button class="pill-btn" id="btnChange">✏️ <span data-t="change">Cambiar</span></button></div>
+</header>
+
+<main id="main" class="hidden">
+  <section class="view" id="view-chart"></section>
+  <section class="view" id="view-num"></section>
+  <section class="view" id="view-synth"></section>
+  <section class="view" id="view-me"></section>
+</main>
+
+<nav id="nav" class="hidden">
+  <button data-view="chart" class="active"><span class="ni">🌌</span><span class="nl" data-t="nav.chart">Carta Astral</span></button>
+  <button data-view="num"><span class="ni">🔢</span><span class="nl" data-t="nav.num">Numerología</span></button>
+  <button data-view="synth"><span class="ni">✨</span><span class="nl" data-t="nav.synth">Síntesis</span></button>
+  <button data-view="me"><span class="ni">👤</span><span class="nl" data-t="nav.me">Mis Datos</span></button>
+</nav>
+
+<!-- Formulario -->
+<div id="form" class="overlay hidden">
+  <div class="form-wrap">
+    <div class="langs" id="formLangs"></div>
+    <div class="brand">
+      <img src="icon.png" alt="" class="brand-logo">
+      <div class="brand-name">Orvaluna</div>
+      <div class="brand-tag" data-t="tagline">Astros &amp; Números del Alma</div>
+    </div>
+    <h2 data-t="welcomeTitle">Revela el mapa de tu alma</h2>
+    <p class="sub" data-t="welcomeSub"></p>
+
+    <label class="fld"><span data-t="fullName">Nombre completo</span>
+      <input id="fName" type="text" autocomplete="name" autocapitalize="words">
+      <small data-t="fullNameHint"></small>
+    </label>
+    <label class="fld"><span data-t="place">Lugar de nacimiento</span>
+      <input id="fPlace" type="text" autocomplete="off" data-tp="placeHint">
+      <div id="placeList" class="suggest hidden"></div>
+      <div id="placeChosen" class="chosen hidden"></div>
+    </label>
+    <div class="row2">
+      <label class="fld"><span data-t="date">Fecha</span><input id="fDate" type="date" min="1800-01-01" max="2100-12-31"></label>
+      <label class="fld"><span data-t="time">Hora</span><input id="fTime" type="time" value="12:00"></label>
+    </div>
+    <label class="check"><input id="fNoTime" type="checkbox"><span data-t="unknownTime">No conozco mi hora exacta</span></label>
+    <details class="adv"><summary data-t="advanced">Ajuste avanzado</summary>
+      <label class="fld"><span data-t="manualOffset"></span><input id="fOffset" type="text" inputmode="decimal" placeholder="-5"><small data-t="manualOffsetHint"></small></label>
+    </details>
+    <div id="formErr" class="err hidden"></div>
+    <button class="cta" id="btnCalc"><span data-t="calc">Revelar mi mapa</span> ✦</button>
+    <button class="ghost hidden" id="btnCancel" data-t="cancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- Cargando -->
+<div id="loading" class="overlay hidden">
+  <div class="astrolabe"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="core">✦</div></div>
+  <p id="loadingTxt" data-t="calculating">Alineando los astros…</p>
+</div>
+
+<!-- Ajustes -->
+<div id="sheet" class="sheet-bg hidden">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 data-t="settings">Ajustes</h3>
+    <div class="set-label" data-t="language">Idioma</div>
+    <div class="langs big" id="setLangs"></div>
+    <div class="set-row">
+      <span data-t="music">Música de fondo</span>
+      <label class="switch"><input type="checkbox" id="setMusic"><span></span></label>
+    </div>
+    <div class="set-row col">
+      <span data-t="volume">Volumen</span>
+      <input type="range" id="setVol" min="0" max="100" value="45">
+    </div>
+    <div class="set-label" data-t="about">Acerca de</div>
+    <p class="about" data-t="aboutTxt"></p>
+    <details class="adv lic"><summary>Open source · Licencias · Lizenzen</summary>
+      <p class="about small">Astronomy Engine © Don Cross — MIT · jsPDF © James Hall, yWorks — MIT · tz-lookup © DarkSky — CC0 · city-timezones © Kevin Kelly — MIT; city data © SimpleMaps.com — CC BY 4.0 · Place search © OpenStreetMap contributors, Nominatim — ODbL · Fonts Cinzel, Jost, Noto Sans Symbols — SIL Open Font License 1.1 · Music and artwork: original works created for Orvaluna.</p>
+    </details>
+    <p class="about small">Orvaluna · <span data-t="version">Versión</span> 1.0.0</p>
+    <button class="cta" id="btnCloseSheet" data-t="close">Cerrar</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="lib/astronomy.min.js"></script>
+<script src="lib/tz-lookup.js"></script>
+<script src="lib/cities.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/numerology.js"></script>
+<script src="js/i18n/es.js"></script>
+<script src="js/i18n/en.js"></script>
+<script src="js/i18n/de.js"></script>
+<script src="js/i18n/pt.js"></script>
+<script src="js/wheel.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pdf.js" defer></script>
+</body>
+</html>

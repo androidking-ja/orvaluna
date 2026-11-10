@@ -1,0 +1,51 @@
+# Orvaluna — proyecto iOS (se genera con XcodeGen: `xcodegen generate`)
+name: Orvaluna
+options:
+  bundleIdPrefix: com.orvaluna
+  developmentLanguage: es
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Valores por defecto; el workflow de CI los sobreescribe
+    ORV_BUNDLE_ID: com.orvaluna.app
+    ORV_TEAM_ID: ""
+targets:
+  Orvaluna:
+    type: application
+    platform: iOS
+    sources:
+      - path: Orvaluna
+        excludes:
+          - Info.plist
+          - PrivacyInfo.xcprivacy
+      - path: Orvaluna/PrivacyInfo.xcprivacy
+        buildPhase: resources
+      - path: ../www
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(ORV_BUNDLE_ID)
+        DEVELOPMENT_TEAM: $(ORV_TEAM_ID)
+        CODE_SIGN_STYLE: Automatic
+        PRODUCT_NAME: Orvaluna
+        INFOPLIST_FILE: Orvaluna/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_BITCODE: NO
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+schemes:
+  Orvaluna:
+    build:
+      targets:
+        Orvaluna: all
+    archive:
+      config: Release

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="saved">PDF salvo em Downloads</string>
+    <string name="open_with">Abrir ou compartilhar seu estudo</string>
+    <string name="error">Não foi possível salvar o PDF</string>
+    <string name="exit">Pressione novamente para sair</string>
+</resources>

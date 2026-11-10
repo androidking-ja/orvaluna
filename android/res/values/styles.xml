@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="night">#140A08</color>
+    <style name="OrvalunaTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:statusBarColor">@color/night</item>
+        <item name="android:navigationBarColor">@color/night</item>
+        <item name="android:colorAccent">#F2B33D</item>
+        <item name="android:colorPrimary">#3A1410</item>
+        <item name="android:colorPrimaryDark">#140A08</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
