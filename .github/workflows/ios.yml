@@ -7,9 +7,10 @@
 #
 # Secretos (Settings → Secrets and variables → Actions → Secrets):
 #   APPLE_TEAM_ID          Team ID de 10 caracteres (developer.apple.com → Membership)
-#   APPSTORE_KEY_ID        Key ID de la clave de API de App Store Connect (rol Admin)
-#   APPSTORE_ISSUER_ID     Issuer ID que aparece encima de la lista de claves
-#   APPSTORE_KEY_P8        Contenido completo del archivo AuthKey_XXXX.p8
+#   ASC_KEY_ID             Key ID de la clave de API de App Store Connect (rol Admin)
+#   ASC_ISSUER_ID          Issuer ID que aparece encima de la lista de claves
+#   ASC_KEY_P8_BASE64      Archivo AuthKey_XXXX.p8 en Base64 (o su texto tal cual)
+# También se aceptan los nombres APPSTORE_KEY_ID, APPSTORE_ISSUER_ID y APPSTORE_KEY_P8.
 # Variable opcional (Settings → Secrets and variables → Actions → Variables):
 #   IOS_BUNDLE_ID          Identificador del paquete (por defecto com.orvaluna.app)
 
@@ -33,9 +34,9 @@ jobs:
     env:
       BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'com.orvaluna.app' }}
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      ASC_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-      ASC_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-      ASC_KEY_P8: ${{ secrets.APPSTORE_KEY_P8 }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || secrets.APPSTORE_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID || secrets.APPSTORE_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8_BASE64 || secrets.APPSTORE_KEY_P8 }}
       BUILD_NUMBER: ${{ github.run_number }}
 
     steps:
@@ -78,7 +79,15 @@ jobs:
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
           KEY=~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
-          printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          if printf '%s' "$ASC_KEY_P8" | grep -q 'BEGIN PRIVATE KEY'; then
+            printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          else
+            printf '%s' "$ASC_KEY_P8" | tr -d ' \r\n' | base64 --decode > "$KEY"
+          fi
+          if ! grep -q 'BEGIN PRIVATE KEY' "$KEY"; then
+            echo "::error::La clave .p8 no es válida: revisa el secreto ASC_KEY_P8_BASE64."
+            exit 1
+          fi
           echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
           security create-keychain -p ci build.keychain
           security default-keychain -s build.keychain

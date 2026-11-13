@@ -44,9 +44,9 @@ tú subes el código a GitHub y el flujo `iOS` compila, firma y envía la app a 
 | Tipo | Nombre | Valor |
 |---|---|---|
 | Secret | `APPLE_TEAM_ID` | Tu Team ID |
-| Secret | `APPSTORE_KEY_ID` | Key ID de la clave |
-| Secret | `APPSTORE_ISSUER_ID` | Issuer ID |
-| Secret | `APPSTORE_KEY_P8` | Abre el `.p8` con el Bloc de notas y pega **todo** el contenido |
+| Secret | `ASC_KEY_ID` | Key ID de la clave |
+| Secret | `ASC_ISSUER_ID` | Issuer ID |
+| Secret | `ASC_KEY_P8_BASE64` | El `.p8` en Base64 (o su texto tal cual, con BEGIN y END) |
 | Variable | `IOS_BUNDLE_ID` | Solo si usaste un Bundle ID distinto de `com.orvaluna.app` |
 
 ### 6. Compilar y subir
