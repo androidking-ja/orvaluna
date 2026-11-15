@@ -147,6 +147,32 @@
     /* ----- CARTA NATAL ----- */
     newPage();
     h1(T('pdfChartSection'));
+    // Resumen de la carta natal
+    h2(T('chartSummary'), 13.5);
+    App.chartSummary().forEach(function (r) { kicker(r.k); para(r.v, { size: 10.5, after: 1.5 }); });
+
+    // Los dos mapas, lado a lado
+    var mw = (CW - 8) / 2, capH = 22;
+    ensure(mw + capH + 12);
+    y += 4;
+    var cvH = document.createElement('canvas'), cvO = document.createElement('canvas');
+    window.OrvWheel.draw(cvH, c, { size: 700, dpr: 1, centerLabel: T('triad') });
+    window.OrvOrbits.draw(cvO, c, { size: 700, dpr: 1, names: App.helioNames(), moonLon: c.planets[1].lon });
+    doc.addImage(cvH.toDataURL('image/png'), 'PNG', M, y, mw, mw);
+    doc.addImage(cvO.toDataURL('image/png'), 'PNG', M + mw + 8, y, mw, mw);
+    var cy2 = y + mw + 5;
+    [[M, T('houseMapTitle'), T('houseMapSub')], [M + mw + 8, T('skyMapTitle'), T('skyMapNote')]].forEach(function (m) {
+      doc.setFont('JostM', 'normal'); doc.setFontSize(9.5); col(C.wine);
+      doc.text(strip(m[1]), m[0] + mw / 2, cy2, { align: 'center' });
+      doc.setFont('Jost', 'normal'); doc.setFontSize(8); col(C.muted);
+      doc.text(doc.splitTextToSize(strip(m[2]), mw - 4), m[0] + mw / 2, cy2 + 4.5, { align: 'center' });
+    });
+    y = cy2 + capH;
+    para(T('skyMapSub'), { size: 9.5, color: C.muted });
+    var nf = function (x) { try { return x.toLocaleString(App.lang(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { return x.toFixed(2); } };
+    var hn = App.helioNames();
+    para((c.helio || []).map(function (p) { return hn[p.key] + ' ' + nf(p.dist) + ' ' + T('au'); }).join('  ·  ') + '  (' + T('au') + ' ' + T('fromSun') + ')', { size: 9, color: C.muted });
+
     kicker(T('pdfPositions'));
     var rows = c.planets.map(function (pl) { return [D.planets[pl.key].name + (pl.retro && pl.key !== 'node' ? ' (R)' : ''), signName(pl.sign), deg(pl.deg), c.timeKnown ? String(pl.house) : '—']; });
     if (c.timeKnown) { rows.push([T('ascFull'), signName(c.asc.sign), deg(c.asc.deg), '1']); rows.push([T('mc'), signName(c.mc.sign), deg(c.mc.deg), '10']); }
@@ -214,6 +240,21 @@
     /* ----- NUMEROLOGÍA ----- */
     newPage();
     h1(T('pdfNumSection'));
+    var ns = App.numSummary();
+    h2(T('numSummary'), 13.5);
+    para(ns.lead, { size: 11 });
+    var per = 4, tw = CW / per, th = 21;
+    ns.core.forEach(function (r, i) {
+      if (i % per === 0) { ensure(th + 2); if (i) y += th + 2; }
+      var xx = M + (i % per) * tw;
+      fill([244, 233, 214]); doc.roundedRect(xx + 1, y, tw - 2, th, 2.5, 2.5, 'F');
+      doc.setFont('Cinzel', 'normal'); doc.setFontSize(15); col(C.wine); doc.text(String(r.v), xx + tw / 2, y + 7.5, { align: 'center' });
+      doc.setFont('JostM', 'normal'); doc.setFontSize(7.5); col(C.gold); doc.text(strip(r.label).toUpperCase(), xx + tw / 2, y + 12.3, { align: 'center', maxWidth: tw - 4 });
+      doc.setFont('Jost', 'normal'); doc.setFontSize(7.5); col(C.muted); doc.text(doc.splitTextToSize(strip(r.title), tw - 5)[0], xx + tw / 2, y + 16.8, { align: 'center' });
+    });
+    y += th + 6;
+    ns.lines.forEach(function (r) { kicker(r.k); para(r.v, { size: 10.5, after: 1.5 }); });
+    y += 3;
     var lp = n.birth.lifePath.value;
     numBadge(lp, T('lifePath') + (lp > 9 ? ' · ' + T('masterNumber') : '') + (n.birth.lifePath.karmic ? ' · ' + T('karmicDebtTag') + ' ' + n.birth.lifePath.karmic : ''), NN[lp].title);
     kicker(T('purpose')); para(NN[lp].essence);

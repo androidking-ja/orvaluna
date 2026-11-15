@@ -107,12 +107,12 @@ p.txt { margin: 10px 0 0; color: #E9DDD1; font-size: 16.5px; line-height: 1.62; 
 .num-hero { text-align: left; }
 .big-num { font-family: 'Cinzel', serif; font-size: 72px; line-height: 1; color: var(--gold); text-shadow: 0 0 24px rgba(242, 179, 61, .45); font-weight: 600; }
 .num-hero .top { display: flex; align-items: center; gap: 16px; }
-.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .mini { background: linear-gradient(180deg, var(--card2), var(--card)); border: 1px solid var(--line); border-radius: 20px; padding: 16px 8px 14px; text-align: center; display: flex; flex-direction: column; align-items: center; }
 .mini .n { font-family: 'Cinzel', serif; font-weight: 600; font-size: 36px; color: var(--gold); line-height: 1.1; }
-.mini .t { font-size: 13.5px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; line-height: 1.25; }
-.mini .s { font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.3; }
+.mini .t { font-size: 13.5px; font-weight: 600; letter-spacing: .4px; hyphens: auto; overflow-wrap: break-word; max-width: 100%; text-transform: uppercase; margin-top: 6px; line-height: 1.25; }
+.mini .s { hyphens: auto; overflow-wrap: break-word; max-width: 100%; font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.3; }
 .mini.tap { cursor: pointer; }
 .mini.sel { border-color: var(--gold); box-shadow: 0 0 18px rgba(242, 179, 61, .2); }
 .tag { display: inline-block; font-size: 11.5px; letter-spacing: 1.5px; text-transform: uppercase; border: 1px solid rgba(242, 179, 61, .5); color: var(--gold2); border-radius: 99px; padding: 2px 10px; margin-top: 8px; }
@@ -246,3 +246,26 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 .name-row h1 { flex: 1; min-width: 0; }
 .jobs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .job { background: linear-gradient(135deg, rgba(242,179,61,.18), rgba(224,85,43,.14)); border: 1px solid rgba(242,179,61,.45); color: var(--gold2); border-radius: 999px; padding: 7px 14px; font-size: 15px; font-weight: 500; }
+.map-head { margin-bottom: 10px; }
+.map-head .meta { font-size: 14px; margin-top: 4px; line-height: 1.45; }
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin-top: 14px; }
+.leg { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; line-height: 1.3; }
+.leg i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 9px; }
+.leg b { color: var(--text); font-weight: 500; }
+.sum-list { margin-top: 12px; }
+.sum-row { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid rgba(242,179,61,.12); }
+.sum-row:last-child { border-bottom: 0; }
+.sum-ic { flex: 0 0 28px; font-size: 20px; text-align: center; color: var(--gold); line-height: 1.3; }
+.sum-k { font-size: 12.5px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+.sum-v { font-size: 15.5px; color: #E9DDD1; line-height: 1.5; margin-top: 2px; }
+.sum-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 14px 0 4px; }
+.sn:first-child { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; text-align: left; padding: 10px 16px; border-color: rgba(242,179,61,.55); }
+.sn:first-child .snv { font-size: 38px; }
+.sn:first-child .snl, .sn:first-child .snt { margin-top: 0; }
+.sn:first-child .snt { font-size: 13px; }
+.sn { border: 1px solid var(--line); border-radius: 14px; padding: 10px 4px 9px; text-align: center; background: rgba(255,255,255,.02); }
+.snv { font-family: 'Cinzel', serif; font-size: 26px; font-weight: 600; color: var(--gold); line-height: 1.1; }
+.snl { font-size: 11px; letter-spacing: .5px; overflow-wrap: break-word; hyphens: auto; text-transform: uppercase; font-weight: 600; margin-top: 4px; line-height: 1.2; }
+.snt { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.25; }
+
+.mini { min-width: 0; }

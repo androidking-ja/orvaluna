@@ -135,6 +135,61 @@
     return { v: v, label: label, title: NN[v].title, kw: NN[v].kw, txt: txt, karmic: karmic };
   }
 
+
+  /* ---------- resúmenes (pantalla + PDF) ---------- */
+  function firstClause(t) { var a = String(t).split(':'); var b = (a.length > 1 ? a.slice(1).join(':') : t).trim(); return b.split('.')[0].trim() + '.'; }
+  function chartSummary() {
+    var c = S.data.chart, L = D(), U = L.ui, rows = [];
+    var sun = c.planets[0], moon = c.planets[1];
+    var pname = function (k) { return L.planets[k].name; };
+    rows.push({ k: T('sumTriad'), ic: '☀️', v: fmt(U.tplTriad, { sun: signIn(sun.sign), sunKw: firstKw(L.signs[sun.sign].kw), moon: signIn(moon.sign), moonKw: firstKw(L.signs[moon.sign].kw),
+      asc: c.timeKnown ? fmt(U.tplTriadAsc, { asc: signIn(c.asc.sign), ascKw: firstKw(L.signs[c.asc.sign].kw) }) : '' }) });
+    var tot = 0; Object.keys(c.elements).forEach(function (k) { tot += c.elements[k]; });
+    rows.push({ k: T('sumEnergy'), ic: '🔥', v: fmt(U.tplEnergy, { el: L.elements[c.dominantElement].name, pct: Math.round(c.elements[c.dominantElement] / tot * 100),
+      mode: L.modes[c.dominantMode].name.toLowerCase(), hint: firstClause(L.elements[c.dominantElement].dom) }) });
+    var pl = c.planets.filter(function (p) { return p.key !== 'node'; }), bySign = {}, byHouse = {};
+    pl.forEach(function (p) { (bySign[p.sign] = bySign[p.sign] || []).push(p.key); (byHouse[p.house] = byHouse[p.house] || []).push(p.key); });
+    var fs = Object.keys(bySign).sort(function (a, b) { return bySign[b].length - bySign[a].length; })[0];
+    var fh = Object.keys(byHouse).sort(function (a, b) { return byHouse[b].length - byHouse[a].length; })[0];
+    var focus;
+    if (bySign[fs].length >= 3) focus = fmt(U.tplFocusSign, { n: bySign[fs].length, sign: signIn(fs), list: bySign[fs].map(pname).join(', ') });
+    else if (c.timeKnown && byHouse[fh].length >= 3) focus = fmt(U.tplFocusHouse, { n: byHouse[fh].length, house: L.houses[fh - 1].name, list: byHouse[fh].map(pname).join(', ') });
+    else focus = U.noFocus;
+    rows.push({ k: T('sumFocus'), ic: '🪐', v: focus });
+    var asp = c.aspects.filter(function (a) { return a.a !== 'node' && a.b !== 'node'; })[0];
+    if (asp) rows.push({ k: T('sumAspect'), ic: '✴️', v: fmt(U.tplAspect, { a: pname(asp.a), verb: L.aspects[asp.type].verb, b: pname(asp.b), name: L.aspects[asp.type].name.toLowerCase(), orb: (function () { try { return asp.orb.toLocaleString(S.lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); } catch (e) { return asp.orb.toFixed(1); } })() }) });
+    var rt = pl.filter(function (p) { return p.retro; }).map(function (p) { return pname(p.key); });
+    rows.push({ k: T('sumRetro'), ic: '↺', v: rt.length ? rt.join(', ') + '.' : U.noRetro });
+    if (c.timeKnown) {
+      var ru = c.planets.filter(function (p) { return p.key === c.chartRuler; })[0];
+      rows.push({ k: T('sumRuler'), ic: '👑', v: fmt(U.tplRuler, { planet: pname(ru.key), sign: signIn(ru.sign), house: ru.house }) });
+      rows.push({ k: T('sumVocation'), ic: '🧭', v: fmt(U.tplVocation, { sign: signIn(c.mc.sign), style: L.signs[c.mc.sign].style }) });
+    }
+    return rows;
+  }
+  function numSummary() {
+    var n = S.data.num, L = D(), U = L.ui, NN = L.num.n;
+    var short = function (v) { return NN[v].title.replace(/\s*\(.*\)$/, ''); };
+    var lp = n.birth.lifePath.value, ex = n.name.expression.value, so = n.name.soul.value;
+    var lead = fmt(U.numLead, { lp: lp, lpTitle: short(lp), exp: ex, soulKw: firstKw(NN[so].kw) });
+    var core = [['lifePath', lp], ['expression', ex], ['soul', so], ['personality', n.name.personality.value], ['birthday', n.birth.birthday.value], ['maturity', n.maturity], ['personalYear', n.birth.personalYear]]
+      .map(function (r) { return { label: T(r[0]), v: r[1], title: short(r[1]), kw: NN[r[1]].kw }; });
+    var masters = core.filter(function (r) { return r.v > 9; }).map(function (r) { return r.v + ' (' + r.label + ')'; });
+    var lines = [
+      { k: T('sumMasters'), ic: '✦', v: masters.length ? fmt(U.tplMasters, { list: masters.join(', ') }) : U.noMasters },
+      { k: T('sumDebts'), ic: '⚖️', v: n.karmicDebts.length ? n.karmicDebts.map(function (k) { return k + '/' + N.reduce(k, false); }).join(', ') + '.' : T('noDebts') },
+      { k: T('sumLessons'), ic: '📜', v: n.name.karmicLessons.length ? fmt(U.tplLessons, { list: n.name.karmicLessons.join(', ') }) : U.noLessons2 },
+      { k: T('sumNow'), ic: '⏳', v: fmt(U.tplNow, { py: n.birth.personalYear, pyTitle: short(n.birth.personalYear), pin: n.currentPinnacle + 1, pinV: n.birth.pinnacles[n.currentPinnacle].value }) }
+    ];
+    return { lead: lead, core: core, lines: lines };
+  }
+  window.OrvApp.chartSummary = chartSummary;
+  window.OrvApp.numSummary = numSummary;
+  window.OrvApp.helioNames = function () { var L = D(), o = { earth: T('earth') }; ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'].forEach(function (k) { o[k] = L.planets[k].name; }); return o; };
+  function sumList(rows) {
+    return '<div class="sum-list">' + rows.map(function (r) { return '<div class="sum-row"><span class="sum-ic">' + r.ic + '</span><div><div class="sum-k">' + esc(r.k) + '</div><div class="sum-v">' + esc(r.v) + '</div></div></div>'; }).join('') + '</div>';
+  }
+
   /* ---------- render: Carta ---------- */
   function renderChart() {
     var c = S.data.chart, L = D(), el = $('view-chart');
@@ -145,8 +200,15 @@
     var tabs = ['triad', 'elements', 'planets', 'houses', 'aspects'].filter(function (k) { return c.timeKnown || k !== 'houses'; });
     var icons = { triad: '☀️', elements: '🔥', planets: '🪐', houses: '🏛️', aspects: '✴️' };
     if (tabs.indexOf(S.chartTab) < 0) S.chartTab = 'triad';
-    var h = '<div class="card wheel-card"><div class="wheel-box"><canvas id="wheel"></canvas></div><div class="chips">' + chips + '</div>' +
+    var nf = function (x) { try { return x.toLocaleString(S.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { return x.toFixed(2); } };
+    var hn = window.OrvApp.helioNames();
+    var legend = (c.helio || []).map(function (p) { return '<span class="leg"><i style="background:' + window.OrvOrbits.COL[p.key] + '"></i>' + esc(hn[p.key]) + ' <b>' + nf(p.dist) + ' ' + T('au') + '</b></span>'; }).join('');
+    var h = '<div class="card wheel-card"><div class="map-head"><div class="lbl sm">🏛️ ' + T('houseMapTitle') + '</div><div class="meta">' + esc(T('houseMapSub')) + '</div></div>' +
+      '<div class="wheel-box"><canvas id="wheel"></canvas></div><div class="chips">' + chips + '</div>' +
       (c.timeKnown ? '' : '<div class="note">' + esc(T('noTimeNote')) + '</div>') + '</div>' +
+      '<div class="card wheel-card"><div class="map-head"><div class="lbl sm">🪐 ' + T('skyMapTitle') + '</div><div class="meta">' + esc(T('skyMapSub')) + '</div></div>' +
+      '<div class="wheel-box"><canvas id="orbits"></canvas></div><div class="legend">' + legend + '</div><div class="note">' + esc(T('skyMapNote')) + ' · ' + T('au') + ' ' + T('fromSun') + '</div></div>' +
+      '<div class="card glow"><div class="lbl">📋 ' + T('summaryKicker') + '</div><h3 class="ttl" style="font-size:21px;margin-top:4px">' + T('chartSummary') + '</h3>' + sumList(chartSummary()) + '</div>' +
       '<div class="tabs" id="chartTabs">' + tabs.map(function (k) { return '<button data-tab="' + k + '" class="' + (k === S.chartTab ? 'active' : '') + '">' + icons[k] + ' ' + T(k) + '</button>'; }).join('') + '</div>' +
       '<div id="chartBody">' + chartBody() + '</div>';
     el.innerHTML = h;
@@ -154,7 +216,11 @@
   }
   function drawWheel() {
     var cv = $('wheel'); if (!cv || !S.data) return;
-    var go = function () { W.draw(cv, S.data.chart, { size: cv.parentNode.clientWidth || 340, centerLabel: T('triad') }); };
+    var go = function () {
+      W.draw(cv, S.data.chart, { size: cv.parentNode.clientWidth || 340, centerLabel: T('triad') });
+      var ov = $('orbits');
+      if (ov && window.OrvOrbits) window.OrvOrbits.draw(ov, S.data.chart, { size: ov.parentNode.clientWidth || 340, names: window.OrvApp.helioNames(), moonLon: S.data.chart.planets[1].lon });
+    };
     if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('20px NotoSym', '♈☽'), document.fonts.load('500 12px Jost')]).then(go, go); else go();
   }
   function chartBody() {
@@ -224,7 +290,11 @@
     var n = S.data.num, NN = D().num.n, L = D(), el = $('view-num');
     var lp = n.birth.lifePath.value, master = lp > 9;
     var lpk = n.birth.lifePath.karmic;
-    var h = '<div class="card glow num-hero"><div class="top"><div class="big-num">' + lp + '</div><div><div class="lbl">' + T('lifePath') + '</div>' +
+    var ns = numSummary();
+    var h = '<div class="card glow"><div class="lbl">📋 ' + T('summaryKicker') + '</div><h3 class="ttl" style="font-size:21px;margin-top:4px">' + T('numSummary') + '</h3>' +
+      '<p class="txt">' + esc(ns.lead) + '</p><div class="sum-nums">' + ns.core.map(function (r, i) { return (i === 0 ? '<div class="sn"><div class="snv">' + r.v + '</div><div><div class="snl">' + esc(r.label) + '</div><div class="snt">' + esc(r.title) + '</div></div></div>' : '<div class="sn"><div class="snv">' + r.v + '</div><div class="snl">' + esc(r.label) + '</div><div class="snt">' + esc(r.title) + '</div></div>'); }).join('') + '</div>' +
+      sumList(ns.lines) + '</div>';
+    h += '<div class="card num-hero"><div class="top"><div class="big-num">' + lp + '</div><div><div class="lbl">' + T('lifePath') + '</div>' +
       '<h3 class="ttl">' + T('lifePath') + ': ' + T('vibration') + ' ' + lp + '</h3></div></div>' +
       '<div class="subttl" style="margin-top:10px">' + esc(NN[lp].title) + '</div>' +
       (master ? '<span class="tag">✦ ' + T('masterNumber') + '</span> ' : '') + (lpk ? '<span class="tag k13">' + T('karmicDebtTag') + ' ' + lpk + '</span>' : '') +

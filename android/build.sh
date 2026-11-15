@@ -10,7 +10,7 @@ export JAVA_TOOL_OPTIONS=
 $T/aapt2 compile --dir res -o $B/res.zip
 $T/aapt2 link -o $B/base.apk -I $T/android.jar --manifest AndroidManifest.xml \
   -A $B/assets --java $B/gen --min-sdk-version 24 --target-sdk-version 34 \
-  --version-code 3 --version-name 1.0.2 -0 mp3 -0 ogg -0 woff2 -0 png --auto-add-overlay $B/res.zip
+  --version-code 4 --version-name 1.0.3 -0 mp3 -0 ogg -0 woff2 -0 png --auto-add-overlay $B/res.zip
 
 javac -nowarn -Xlint:-options -source 8 -target 8 -encoding UTF-8 -bootclasspath $T/android.jar \
   -d $B/classes $(find src $B/gen -name '*.java') 2>&1 | grep -v JAVA_TOOL || true

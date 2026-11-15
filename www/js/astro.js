@@ -132,6 +132,18 @@
     return out;
   }
 
+
+  // Posiciones heliocéntricas (órbitas alrededor del Sol) para el mapa planetario
+  var HELIO = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+  function helio(date) {
+    return HELIO.map(function (k) {
+      var v = A.HelioVector(A.Body[k.charAt(0).toUpperCase() + k.slice(1)], date);
+      var e = A.Ecliptic(v);
+      var s = signOf(e.elon);
+      return { key: k, lon: norm(e.elon), dist: Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z), sign: s.key, deg: s.deg };
+    });
+  }
+
   function computeChart(utcDate, lat, lon, timeKnown) {
     var planets = PLANETS.map(function (k) { return planetPos(k, utcDate); });
     var h = houses(utcDate, lat, lon);
@@ -165,7 +177,8 @@
       mc: { lon: h.mc, sign: mc.key, deg: mc.deg, signIndex: mc.index },
       houses: cuspSigns, houseSystem: h.system, aspects: asp,
       elements: el, modes: mo, dominantElement: domEl[0], weakElement: domEl[3],
-      dominantMode: domMo[0], hemispheres: hem, chartRuler: RULER[asc.key], timeKnown: !!timeKnown
+      dominantMode: domMo[0], hemispheres: hem, chartRuler: RULER[asc.key], timeKnown: !!timeKnown,
+      helio: helio(utcDate)
     };
   }
 
