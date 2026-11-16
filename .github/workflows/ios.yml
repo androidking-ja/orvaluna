@@ -95,6 +95,13 @@ jobs:
           security set-keychain-settings -lut 21600 build.keychain
           security list-keychains -d user -s build.keychain login.keychain
 
+      - name: Crear certificado y perfil de App Store (API de Apple)
+        if: steps.creds.outputs.ok == 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q cryptography
+          KEYCHAIN="$HOME/Library/Keychains/build.keychain-db" "$RUNNER_TEMP/venv/bin/python" ios/ci/asc_signing.py setup
+
       - name: Archivar y firmar (Release)
         if: steps.creds.outputs.ok == 'true'
         working-directory: ios
@@ -103,12 +110,10 @@ jobs:
           xcodebuild -project Orvaluna.xcodeproj -scheme Orvaluna \
             -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/Orvaluna.xcarchive archive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             ORV_BUNDLE_ID="$BUNDLE_ID" ORV_TEAM_ID="$TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $HOME/Library/Keychains/build.keychain-db" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" | tail -n 60
 
       - name: Exportar .ipa para App Store
@@ -122,8 +127,12 @@ jobs:
           <plist version="1.0"><dict>
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>export</string>
-            <key>signingStyle</key><string>automatic</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
             <key>teamID</key><string>${TEAM_ID}</string>
+            <key>provisioningProfiles</key><dict>
+              <key>${BUNDLE_ID}</key><string>${PROFILE_NAME}</string>
+            </dict>
             <key>uploadSymbols</key><true/>
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict></plist>
@@ -131,11 +140,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/Orvaluna.xcarchive \
             -exportOptionsPlist build/ExportOptions.plist \
-            -exportPath build/export \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -n 40
+            -exportPath build/export | tail -n 40
           ls -la build/export
 
       - name: Guardar el .ipa como artefacto
@@ -152,3 +157,10 @@ jobs:
           xcrun altool --upload-app --type ios --file "$IPA" \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
           echo "::notice::Build $BUILD_NUMBER subido. Aparecerá en App Store Connect → TestFlight en unos minutos."
+
+      - name: Eliminar certificado y perfil temporales
+        if: always() && steps.creds.outputs.ok == 'true'
+        run: |
+          if [ -x "$RUNNER_TEMP/venv/bin/python" ]; then
+            "$RUNNER_TEMP/venv/bin/python" ios/ci/asc_signing.py cleanup
+          fi
