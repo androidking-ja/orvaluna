@@ -32,9 +32,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: $(ORV_BUNDLE_ID)
         DEVELOPMENT_TEAM: $(ORV_TEAM_ID)
         CODE_SIGN_STYLE: Automatic
-      configs:
-        Release:
-          CODE_SIGN_IDENTITY: "Apple Distribution"
         PRODUCT_NAME: Orvaluna
         INFOPLIST_FILE: Orvaluna/Info.plist
         GENERATE_INFOPLIST_FILE: NO
@@ -45,6 +42,9 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+      configs:
+        Release:
+          CODE_SIGN_IDENTITY: "Apple Distribution"
 schemes:
   Orvaluna:
     build:
