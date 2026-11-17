@@ -154,8 +154,19 @@ jobs:
         if: steps.creds.outputs.ok == 'true' && (github.event_name == 'push' || inputs.upload)
         run: |
           IPA=$(ls ios/build/export/*.ipa | head -n 1)
+          set +e
           xcrun altool --upload-app --type ios --file "$IPA" \
-            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee altool.log
+          CODE=${PIPESTATUS[0]}
+          set -e
+          if [ "$CODE" -ne 0 ] || grep -qE "ERROR|Failed to upload|UPLOAD FAILED" altool.log; then
+            if grep -q "Cannot determine the Apple ID from Bundle ID" altool.log; then
+              echo "::error::App Store Connect no tiene ninguna app con el Bundle ID $BUNDLE_ID. Crea la variable IOS_BUNDLE_ID con el Bundle ID de tu app (App Store Connect → Información de la app)."
+            else
+              echo "::error::Apple rechazó la subida: revisa las líneas ERROR de este paso."
+            fi
+            exit 1
+          fi
           echo "::notice::Build $BUILD_NUMBER subido. Aparecerá en App Store Connect → TestFlight en unos minutos."
 
       - name: Eliminar certificado y perfil temporales
