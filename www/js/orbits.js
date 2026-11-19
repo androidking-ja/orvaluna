@@ -86,8 +86,15 @@
     c.strokeStyle = '#5A2208'; c.lineWidth = 1.2; c.beginPath(); c.arc(cx, cy, sr * 0.5, 0, Math.PI * 2); c.stroke();
     c.fillStyle = '#5A2208'; c.beginPath(); c.arc(cx, cy, sr * 0.12, 0, Math.PI * 2); c.fill();
 
-    // planetas
     var fs = Math.max(9, Math.round(R * 0.052)), placed = [{ x0: cx - R * 0.11, x1: cx + R * 0.11, y0: cy - R * 0.11, y1: cy + R * 0.11 }];
+    // reservar el espacio de todos los planetas para que ninguna etiqueta los tape
+    ORDER.forEach(function (k) {
+      var h = H[k]; if (!h) return;
+      var q = pt(h.lon, orbitR[k]), r = Math.max(3, R * SIZE[k]) * (k === 'saturn' ? 1.9 : 1.3);
+      placed.push({ x0: q[0] - r, x1: q[0] + r, y0: q[1] - r, y1: q[1] + r });
+    });
+
+    // planetas
     ORDER.forEach(function (k) {
       var h = H[k]; if (!h) return;
       var pos = pt(h.lon, orbitR[k]), pr = Math.max(3, R * SIZE[k]);
